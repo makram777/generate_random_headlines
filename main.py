@@ -95,6 +95,39 @@ emotional_triggers = [
     'Vanity'
 ]
 
+tone = [
+    'Happy',
+    'Excited',
+    'Sad',
+    'Anxious',
+    'Calm',
+    'Passionate',
+    'Serious',
+    'Humorous',
+    'Ironic',
+    'Inspiring',
+    'Empathetic',
+    'Formal',
+    'Casual',
+    'Optimistic',
+    'Pessimistic',
+    'Fearful',
+    'Nostalgic',
+    'Affectionate',
+    'Sympathetic',
+    'Curious',
+    'Energetic',
+    'Indifferent',
+    'Confident',
+    'Surprised',
+    'Angry',
+    'Suspenseful',
+    'Mysterious',
+    'Hopeful',
+    'Gloomy',
+    'Skeptical'
+]
+
 # Use the service account credentials and gspread to access the Google Spreadsheet
 scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
 creds = ServiceAccountCredentials.from_json_keyfile_name('credentials.json', scope)
@@ -111,6 +144,7 @@ def index():
         engagement_format = request.form['engagement_format']  # Get the selected engagement format
         emotional_trigger = request.form['emotional_trigger']  # Get the selected emotional trigger
         topic = request.form['topic']  # Get the topic
+        tone = request.form['tone']  # Get the selected tone
 
         sheet = None
         if user_input.lower() == 'matt':
@@ -126,16 +160,21 @@ def index():
         if emotional_trigger.lower() == 'random':
             emotional_trigger = random.choice(emotional_triggers)
 
-        description = generate_headlines(sheet, topic, engagement_format, emotional_trigger)
+        if tone.lower() == 'random':  # Added this block for random tone selection
+            tone = random.choice(tones)
+
+        description = generate_headlines(sheet, topic, engagement_format, emotional_trigger, tone)
         return redirect(url_for('result', description=description))
 
     return render_template('index.html')
 
-def generate_headlines(sheet, topic, engagement_format, emotional_trigger):
+
+
+def generate_headlines(sheet, topic, engagement_format, emotional_trigger, tone):
     # Check if the header row exists
     if sheet.row_count == 0:
         # Append column headers to the sheet
-        sheet.append_row(["Topic", "Engagement Format", "Emotional Trigger", "Headline"])
+        sheet.append_row(["Topic", "Engagement Format", "Emotional Trigger", "Tone", "Headline"])
 
     # Loop 3 times to create 3 different headlines
     for _ in range(3):
@@ -145,8 +184,11 @@ def generate_headlines(sheet, topic, engagement_format, emotional_trigger):
         if emotional_trigger.lower() == 'random':
             emotional_trigger = random.choice(emotional_triggers)
 
+        if tone.lower() == 'random':
+            tone = random.choice(tone)
+
         # Define the prompt for the completion
-        prompt = f"Create an ad headline for {topic} with the following conditions:\n1. Engagement Format: {engagement_format}\n2. Emotional Trigger: {emotional_trigger}"
+        prompt = f"Create an ad headline for {topic} with the the tone {tone} and the following conditions:\n1. Engagement Format: {engagement_format}\n2. Emotional Trigger: {emotional_trigger}\n3. Tone: {tone}"
 
         # Use OpenAI's API to create the completion
         response = openai.Completion.create(engine="text-davinci-003", prompt=prompt, max_tokens=100)
@@ -169,10 +211,11 @@ def generate_headlines(sheet, topic, engagement_format, emotional_trigger):
         description = ' '.join(description_response.choices[0].text.strip().split()[:30])
 
         # Add the data to the Google Spreadsheet
-        sheet.append_row([topic, engagement_format, emotional_trigger, headline, description])
+        sheet.append_row([topic, engagement_format, emotional_trigger, tone, headline, description])
 
     # Return the confirmation message
     return f"3 headlines about {topic} have been generated."
+
 
 
 @app.route('/result')
@@ -180,30 +223,32 @@ def result():
     description = request.args.get('description')
     return render_template('index.html', description=description)
 
-def get_recent_10_topics():
-    # Get all non-empty topics from Sheet1 in the Google Spreadsheet
-    topics = sheet.col_values(1)[1:]
+def get_recent_10(column_index):
+    # Get all non-empty values from the specified column in the Google Spreadsheet
+    values = sheet.col_values(column_index)[1:]
     # Remove empty values from the list
-    topics = [topic for topic in topics if topic.strip()]
-    # Retrieve the recent 10 topics in reverse order
-    recent_10_topics = topics[-12:][::-1]
-    return recent_10_topics
-
-
+    values = [value for value in values if value.strip()]
+    # Retrieve the recent 10 values
+    recent_10_values = values[-10:]
+    return recent_10_values
 
 @app.route('/latest_topics')
 def latest_topics():
-    topics = get_recent_10_topics()  # Retrieve the recent 10 topics
+    topics = get_recent_10(1)  # Retrieve the recent 10 topics
     topics = topics[::-1]  # Reverse the list to display from bottom to top
 
     # Retrieve the headlines for each topic
-    headlines = sheet.col_values(4)[1:]
+    headlines = get_recent_10(5)  # Get headlines
     headlines = headlines[::-1]  # Reverse the list to display from bottom to top
 
-    # Combine the topics and headlines into a list of tuples
-    topic_headlines = list(zip(topics, headlines))
+    # Retrieve the tone for each topic
+    tones = get_recent_10(4)  # Get tones
+    tones = tones[::-1]  # Reverse the list to display from bottom to top
 
-    return render_template('latest_topics.html', topic_headlines=topic_headlines)
+    # Combine the topics, tones, and headlines into a list of tuples
+    topic_tone_headlines = list(zip(topics, tones, headlines))
+
+    return render_template('latest_topics.html', topic_tone_headlines=topic_tone_headlines)
 
 
 

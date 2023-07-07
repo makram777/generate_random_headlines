@@ -170,16 +170,20 @@
             <thead>
                 <tr>
                     <th scope="col">Topic</th>
+                    <th scope="col">Tone</th> <!-- Add a column for the tone -->
                     <th scope="col">Headline</th>
                 </tr>
             </thead>
+            
             <tbody>
-                {% for topic, headline in topic_headlines %}
+                {% for topic, tone, headline in topic_tone_headlines %}
                 <tr>
                     <td>{{ topic }}</td>
+                    <td>{{ tone }}</td> <!-- Display the tone -->
                     <td>{{ headline }}</td>
                 </tr>
                 {% endfor %}
+                
             </tbody>
         </table>
     </div>
