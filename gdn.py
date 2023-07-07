@@ -141,7 +141,7 @@ creds = ServiceAccountCredentials.from_json_keyfile_name('credentials.json', sco
 client = gspread.authorize(creds)
 
 # Open the Google Spreadsheet by its key
-spreadsheet = client.open_by_key("1eDGulXJxIoT-DMN2q6O7lR11hgCDXWGSLMyIRDj1D8Y")
+spreadsheet = client.open_by_key("1i4rJRMzZ-cHNcB_13XzQ3w9GksV6E_tj14uA8HCnw8w")
 sheet = spreadsheet.sheet1  # Access sheet 1
 
 @app.route('/', methods=['GET', 'POST'])

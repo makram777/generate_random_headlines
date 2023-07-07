@@ -5,12 +5,8 @@ from dotenv import load_dotenv
 import random
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
-from flask import Flask
-from gdn import gdn  # import the blueprint you defined in gdn.py
-from gdn import gdn_bp
 
 app = Flask(__name__)
-app.register_blueprint(gdn_bp)
 
 # Load the .env file
 load_dotenv()
