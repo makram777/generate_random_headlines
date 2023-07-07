@@ -5,18 +5,21 @@ from dotenv import load_dotenv
 import random
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
-from flask import Flask
-from gdn import gdn  # import the blueprint you defined in gdn.py
-from gdn import gdn_bp
+from flask import Blueprint, render_template
 
 app = Flask(__name__)
-app.register_blueprint(gdn_bp)
 
 # Load the .env file
 load_dotenv()
 
 # Get the OpenAI key from the environment variables
 openai.api_key = os.getenv('OPENAI_KEY')
+
+gdn_bp = Blueprint('gdn', __name__)
+
+@gdn_bp.route('/gdn', methods=['GET', 'POST'])
+def gdn():
+    return render_template('gdn.html')
 
 # Define the lists of engagement formats and emotional triggers
 engagement_formats = [
